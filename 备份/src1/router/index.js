@@ -1,6 +1,8 @@
+/* ====== 页面导航系统（路由） ====== */
+
 import { createRouter, createWebHashHistory } from 'vue-router'
-import TemplateEditor from '@/pages/TemplateEditor.vue'
-import TemplatesList from '@/pages/TemplatesList.vue'
+import TemplateEditor from '@/pages/TemplateEditor.vue'  // 编辑页面
+import TemplatesList from '@/pages/TemplatesList.vue'  // 列表页面
 
 const router = createRouter({
   history: createWebHashHistory(),

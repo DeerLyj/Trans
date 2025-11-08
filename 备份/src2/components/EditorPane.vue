@@ -1,6 +1,6 @@
 <template>
   <div class="grid2">
-    <!-- 左：编辑区（仅 Monaco 自身滚动） -->
+    <!-- 左：编辑区（内部滚动） -->
     <section class="panel">
       <header class="panel-head">
         <div class="title">编辑区</div>
@@ -8,12 +8,12 @@
         <span class="err" v-if="errorTip">{{ errorTip }}</span>
         <button class="chip" @click="$emit('format')">格式化</button>
       </header>
-      <div class="panel-body" :style="{ height: bodyHeight }">
-        <CodeEditor v-model="innerYaml" language="yaml" word-wrap />
+      <div class="panel-body" :style="{height: bodyHeight}">
+        <CodeEditor v-model="innerYaml" language="yaml" placeholder="在此粘贴/编写 YAML 模板…" />
       </div>
     </section>
 
-    <!-- 右：Proto 预览（与左侧同款 Monaco） -->
+    <!-- 右：Proto 预览（内部滚动） -->
     <ProtoPreview
       :code="protoText"
       :panel-height="paneHeight"
@@ -32,6 +32,7 @@ import { yamlToProto } from '@/utils/yamlToProto'
 const props = withDefaults(defineProps<{
   modelValue: string
   protoRootName?: string
+  /** 外部计算好的面板可视高度（px） */
   paneHeight?: number
 }>(), { modelValue: '', protoRootName: 'SomeMessage', paneHeight: 480 })
 const emit = defineEmits<{ (e:'update:modelValue', v:string):void; (e:'format'):void }>()
@@ -51,6 +52,7 @@ const protoText = computed(() => {
   }catch{ errorTip.value='转换失败'; return '// transform failed' }
 })
 
+/** 让 body 固定高度并滚动（扣除头部高度 44px 左右） */
 const bodyHeight = computed(() => `${Math.max(240, (props.paneHeight ?? 480) - 48)}px`)
 </script>
 
@@ -73,9 +75,9 @@ const bodyHeight = computed(() => `${Math.max(240, (props.paneHeight ?? 480) - 4
 }
 .chip:hover{background:#2563eb}
 
-/* 关键：不让外层再滚动，只由 Monaco 滚动 */
+/* 关键：内部滚动容器 */
 .panel-body{
-  overflow: hidden;
+  overflow: auto;
   padding: 12px;
   background:#0e1627;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);

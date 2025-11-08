@@ -28,7 +28,7 @@
       </div>
     </section>
 
-    <!-- 左右两栏编辑/预览 -->
+    <!-- 左右两栏：把计算后的高度传给面板 -->
     <EditorPane
       v-model="yaml"
       :proto-root-name="protoRootName"
@@ -36,16 +36,15 @@
       @format="formatYaml"
     />
 
-    <!-- 高级：字段列表（双向联动） -->
+    <!-- 高级设置 -->
     <details class="card adv">
-      <summary>高级 - 字段列表（实时生成 YAML 到上方编辑区）</summary>
+      <summary>高级 - Proto 根消息名</summary>
       <div class="adv-body">
-        <!-- ✅ 把编辑区当前 YAML 传给高级区用于反向同步 -->
-        <SchemaDesigner :source-yaml="yaml" @update-yaml="yaml = $event" />
+        <input class="input" v-model="protoRootName" placeholder="SomeMessage" />
       </div>
     </details>
 
-    <!-- 调试用：视口尺寸 -->
+    <!-- 视口尺寸提示（可删） -->
     <div class="vp-badge">{{ vpW }} × {{ vpH }}</div>
   </div>
 </template>
@@ -56,7 +55,6 @@ import { useRoute, useRouter } from 'vue-router'
 import EditorPane from '@/components/EditorPane.vue'
 import { getTemplate, upsertTemplate, deleteTemplate as removeTemplate } from '@/utils/templateStore'
 import { yamlToObject, objectToYaml } from '@/utils/yamlTools'
-import SchemaDesigner from '@/components/MetaSchemaDesigner.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,53 +68,31 @@ const yaml = ref<string>(`server:
   http:
     addr: 0.0.0.0:8001
     timeout: 1s
-  grpc:
-    addr: 0.0.0.0:9001
-    timeout: 1s
-
-data:
-  database:
-    driver: mysql
-    source: root:123456@tcp(127.0.0.1:3380)/mysql?charset=utf8mb4&parseTime=True&loc=Local
-  redis:
-    addr: 127.0.0.1:6350
-    password: "123456"
-    read_timeout: 0.2s
-    write_timeout: 0.2s
-auth:
-  key: some-secret-key
-
-discovery:
-  consul:
-    addr: 127.0.0.1:8500
-    scheme: http
-registry:
-  consul:
-    addr: 127.0.0.1:8500
-    scheme: http
-
-trace:
-  enable: true
-  endpoint: http://127.0.0.1:14268/api/traces
-  trace_file_path: ./log/trace.log
-  exporter: jaeger
 `)
 const protoRootName = ref('SomeMessage')
 
-/** 计算面板高度 */
+/** ====== 关键：计算编辑/预览面板高度（窗口自适应，面板内滚动） ====== */
 const paneHeight = ref<number>(480)
 const vpW = ref<number>(window.innerWidth)
 const vpH = ref<number>(window.innerHeight)
-const RESERVED = 250
+/** 预估顶部（站点Header）+ 本页表单卡片 + 上下间距的总高度，按你的样式微调 */
+const RESERVED = 250 // px：可根据你实际头部高度&表单高度再微调
+
 function calcHeight() {
   vpW.value = window.innerWidth
   vpH.value = window.innerHeight
-  paneHeight.value = Math.max(360, window.innerHeight - RESERVED)
+  const h = Math.max(360, window.innerHeight - RESERVED) // 最小 360
+  paneHeight.value = h
 }
-onMounted(() => { calcHeight(); window.addEventListener('resize', calcHeight) })
-onBeforeUnmount(() => { window.removeEventListener('resize', calcHeight) })
+onMounted(() => {
+  calcHeight()
+  window.addEventListener('resize', calcHeight)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', calcHeight)
+})
+/** =============================================================== */
 
-/** 载入已有模板 */
 onMounted(() => {
   const id = (route.query.id as string) || ''
   if (!id) return
@@ -157,7 +133,7 @@ function formatYaml() {
 <style scoped>
 .page{display:flex;flex-direction:column;gap:14px}
 
-/* 卡片 */
+/* 表单卡片（保留你现有样式） */
 .card{background:#0f172a;border:1px solid #1f2937;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.28);overflow:hidden}
 .card-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #1f2937;background:linear-gradient(180deg,#0f172a,#0f172acc)}
 .head-left{display:flex;align-items:center;gap:10px}
@@ -171,11 +147,10 @@ function formatYaml() {
 .id-box{justify-self:end;display:flex;gap:6px;align-items:center;font-size:12px;opacity:.65;padding:6px 10px;background:#0b1220;border:1px dashed #2a3347;border-radius:8px}
 .id-box em{font-style:normal;opacity:.9}
 
-/* 高级设置（去掉 max-width，铺满） */
+/* 高级设置 */
 .adv{margin-top:8px}
 .adv summary{cursor:pointer;padding:12px 14px;border-bottom:1px solid #1f2937}
-.adv-body{padding:12px 14px;width:100%}
-.card.adv, .card.adv > .adv-body, .card.adv > .adv-body > *{display:block;width:100%}
+.adv-body{padding:12px 14px;max-width:360px}
 
 /* 按钮 */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid #374151;background:#111827;color:#e5e7eb;font-size:13px;cursor:pointer}

@@ -1,3 +1,5 @@
+// 
+
 import YAML from 'js-yaml'
 
 export function yamlToObject(str = '') {
